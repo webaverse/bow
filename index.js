@@ -14,6 +14,9 @@ const muzzleOffset = new THREE.Vector3(0, 0.1, 0.25);
 const muzzleFlashTime = 300;
 const bulletSparkTime = 300; */
 
+const localVector = new THREE.Vector3();
+
+const rightQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI/2);
 const emptyArray = [];
 const fnEmptyArray = () => emptyArray;
 
@@ -27,6 +30,7 @@ export default e => {
   // const textureLoader = new THREE.TextureLoader();
 
   let bowApp = null;
+  const arrowApps = [];
   e.waitUntil((async () => {
     {
       let u2 = `${baseUrl}bow.glb`;
@@ -81,10 +85,48 @@ export default e => {
       }
       await bowApp.addModule(m);
       scene.add(bowApp);
-      // metaversefile.addApp(bowApp);
-      
+
+      // window.bowApp = bowApp;
+      const arrowTemplateMesh = bowApp.getObjectByName('Arrow'); // bowApp.getModule('arrowTemplate');
+      arrowTemplateMesh.parent.remove(arrowTemplateMesh);
+
+      const _createArrowApp = () => {
+        const arrowApp = metaversefile.createApp({
+          name: 'arrow',
+        });
+
+        const arrowMesh = arrowTemplateMesh.clone();
+        arrowMesh.quaternion.premultiply(rightQuaternion);
+        arrowMesh.frustumCulled = false;
+        arrowApp.add(arrowMesh);
+
+        arrowApp.velocity = new THREE.Vector3(0, 0, -1)
+          .applyQuaternion(
+            new THREE.Quaternion()
+              .setFromRotationMatrix(bowApp.matrixWorld)
+              .premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2))
+          );
+        
+        arrowApp.updatePhysics = (timestamp, timeDiff) => {
+          const timeDiffS = timeDiff / 1000;
+          arrowApp.position.add(localVector.copy(arrowApp.velocity).multiplyScalar(timeDiffS));
+          // console.log('add', arrowApp.id, arrowApp.position.toArray().join(','), localVector.toArray().join(','));
+          arrowApp.updateMatrixWorld();
+        };
+
+        return arrowApp;
+      };
+
       bowApp.addEventListener('use', e => {
         console.log('got bow use', bowApp);
+        const arrowApp = _createArrowApp();
+        
+        scene.add(arrowApp);
+        arrowApp.position.copy(bowApp.position);
+        arrowApp.quaternion.copy(bowApp.quaternion);
+        // arrowApp.scale.copy(bowApp.scale);
+        arrowApp.updateMatrixWorld();
+        arrowApps.push(arrowApp);
       });
     }
   })());
@@ -121,7 +163,7 @@ export default e => {
     }
   });
 
-  useFrame(({timestamp}) => {
+  useFrame(({timestamp, timeDiff}) => {
     if (!wearing) {
       if (bowApp) {
         bowApp.position.copy(app.position);
@@ -134,6 +176,9 @@ export default e => {
         app.quaternion.copy(bowApp.quaternion);
         app.updateMatrixWorld();
       }
+    }
+    for (const arrowApp of arrowApps) {
+      arrowApp.updatePhysics(timestamp, timeDiff);
     }
   });
   
