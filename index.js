@@ -79,7 +79,12 @@ export default e => {
         {
           "key": "use",
           "value": {
-            "ik": "pistol"
+            "animationEnvelope": [
+              "bowDraw",
+              "bowIdle",
+              "bowLoose"
+            ],
+            "ik": "bow"
           }
         }
       ];
