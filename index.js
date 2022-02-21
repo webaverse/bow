@@ -19,11 +19,23 @@ const localVector2 = new THREE.Vector3();
 const localVector3 = new THREE.Vector3();
 const localVector4 = new THREE.Vector3();
 const localQuaternion = new THREE.Quaternion();
+const localMatrix = new THREE.Matrix4();
 
 // const rightQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI/2);
+const zeroVector = new THREE.Vector3(0, 0, 0);
+const upVector = new THREE.Vector3(0, 1, 0);
+const gravity = new THREE.Vector3(0, -9.8, 0);
 const emptyArray = [];
 const fnEmptyArray = () => emptyArray;
 const arrowLength = 0.3;
+
+const _setQuaternionFromVelocity = (quaternion, velocity) => quaternion.setFromRotationMatrix(
+  localMatrix.lookAt(
+    zeroVector,
+    velocity,
+    upVector
+  )
+);
 
 export default e => {
   const app = useApp();
@@ -123,20 +135,28 @@ export default e => {
           
           // console.log('add', arrowApp.id, arrowApp.position.toArray().join(','), localVector.toArray().join(','));
 
-          const normalizedVelocity = localVector3.copy(arrowApp.velocity).normalize();
-          const moveDistance = normalizedVelocity.length() * timeDiffS;
+          const moveDistance = arrowApp.velocity.length() * timeDiffS;
           if (moveDistance > 0) {
             arrowApp.tip.matrixWorld.decompose(localVector, localQuaternion, localVector2);
             const collision = physics.raycast(
               localVector,
               localQuaternion
             );
+
+            _setQuaternionFromVelocity(arrowApp.quaternion, arrowApp.velocity);
+            const normalizedVelocity = localVector3.copy(arrowApp.velocity)
+              .normalize();
+
             let moveFactor;
             if (collision && collision.distance <= moveDistance) {
               moveFactor = collision.distance;
               arrowApp.velocity.setScalar(0);
             } else {
               moveFactor = moveDistance;
+              arrowApp.velocity.add(
+                localVector4.copy(gravity)
+                  .multiplyScalar(timeDiffS)
+              );
             }
             arrowApp.position.add(
               localVector4.copy(normalizedVelocity)
@@ -156,8 +176,8 @@ export default e => {
         
         scene.add(arrowApp);
         arrowApp.position.copy(bowApp.position);
-        arrowApp.quaternion.copy(bowApp.quaternion);
-        // arrowApp.scale.copy(bowApp.scale);
+        // arrowApp.quaternion.copy(bowApp.quaternion);
+        _setQuaternionFromVelocity(arrowApp.quaternion, arrowApp.velocity);
         arrowApp.updateMatrixWorld();
         arrowApps.push(arrowApp);
       });
