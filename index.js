@@ -115,8 +115,6 @@ export default e => {
         
         arrowApp.updatePhysics = (timestamp, timeDiff) => {
           const timeDiffS = timeDiff / 1000;
-          
-          // console.log('add', arrowApp.id, arrowApp.position.toArray().join(','), localVector.toArray().join(','));
 
           const moveDistance = arrowApp.velocity.length() * timeDiffS;
           if (moveDistance > 0) {
