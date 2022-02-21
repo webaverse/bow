@@ -107,7 +107,7 @@ export default e => {
         arrowApp.add(tip);
         arrowApp.tip = tip;
 
-        arrowApp.velocity = new THREE.Vector3(0, 0, -1)
+        arrowApp.velocity = new THREE.Vector3(0, 0, -20)
           .applyQuaternion(
             new THREE.Quaternion()
               .setFromRotationMatrix(bowApp.matrixWorld)
