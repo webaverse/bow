@@ -11,6 +11,11 @@
     {
       "key": "use",
       "value": {
+        "animationEnvelope": [
+          "bowDraw",
+          "bowIdle",
+          "bowLoose"
+        ],
         "ik": "bow"
       }
     }
