@@ -15,10 +15,15 @@ const muzzleFlashTime = 300;
 const bulletSparkTime = 300; */
 
 const localVector = new THREE.Vector3();
+const localVector2 = new THREE.Vector3();
+const localVector3 = new THREE.Vector3();
+const localVector4 = new THREE.Vector3();
+const localQuaternion = new THREE.Quaternion();
 
-const rightQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI/2);
+// const rightQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI/2);
 const emptyArray = [];
 const fnEmptyArray = () => emptyArray;
+const arrowLength = 0.3;
 
 export default e => {
   const app = useApp();
@@ -64,7 +69,7 @@ export default e => {
           "value": {
             "boneAttachment": "rightHand",
             "position": [0, 0, 0],
-            "quaternion": [0.7071067811865475, 0, 0, 0.7071067811865476],
+            "quaternion": [0.5, -0.4999999999999999, -0.5, 0.5000000000000001],
             "scale": [1, 1, 1]
           }
         },
@@ -96,21 +101,49 @@ export default e => {
         });
 
         const arrowMesh = arrowTemplateMesh.clone();
-        arrowMesh.quaternion.premultiply(rightQuaternion);
+        // arrowMesh.quaternion.premultiply(rightQuaternion);
         arrowMesh.frustumCulled = false;
         arrowApp.add(arrowMesh);
+
+        const tip = new THREE.Object3D();
+        tip.position.set(0, 0, -arrowLength/2);
+        // tip.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI/2);
+        arrowApp.add(tip);
+        arrowApp.tip = tip;
 
         arrowApp.velocity = new THREE.Vector3(0, 0, -1)
           .applyQuaternion(
             new THREE.Quaternion()
               .setFromRotationMatrix(bowApp.matrixWorld)
-              .premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2))
+              // .premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2))
           );
         
         arrowApp.updatePhysics = (timestamp, timeDiff) => {
           const timeDiffS = timeDiff / 1000;
-          arrowApp.position.add(localVector.copy(arrowApp.velocity).multiplyScalar(timeDiffS));
+          
           // console.log('add', arrowApp.id, arrowApp.position.toArray().join(','), localVector.toArray().join(','));
+
+          const normalizedVelocity = localVector3.copy(arrowApp.velocity).normalize();
+          const moveDistance = normalizedVelocity.length() * timeDiffS;
+          if (moveDistance > 0) {
+            arrowApp.tip.matrixWorld.decompose(localVector, localQuaternion, localVector2);
+            const collision = physics.raycast(
+              localVector,
+              localQuaternion
+            );
+            let moveFactor;
+            if (collision && collision.distance <= moveDistance) {
+              moveFactor = collision.distance;
+              arrowApp.velocity.setScalar(0);
+            } else {
+              moveFactor = moveDistance;
+            }
+            arrowApp.position.add(
+              localVector4.copy(normalizedVelocity)
+                .multiplyScalar(moveFactor)
+            );
+          }
+
           arrowApp.updateMatrixWorld();
         };
 
@@ -118,7 +151,7 @@ export default e => {
       };
 
       bowApp.addEventListener('use', e => {
-        console.log('got bow use', bowApp);
+        // console.log('got bow use', bowApp);
         const arrowApp = _createArrowApp();
         
         scene.add(arrowApp);
@@ -144,10 +177,9 @@ export default e => {
   useWear(e => {
     const {wear} = e;
     if (bowApp) {
-      bowApp.position.copy(app.position);
-      bowApp.quaternion.copy(app.quaternion);
+      /* bowApp.position.copy(app.position);
       bowApp.scale.copy(app.scale);
-      bowApp.updateMatrixWorld();
+      bowApp.updateMatrixWorld(); */
       
       bowApp.dispatchEvent({
         type: 'wearupdate',
