@@ -5,7 +5,7 @@
     {
       "key": "aim",
       "value": {
-        "hand": "left"
+        "ikHand": "left"
       }
     },
     {
