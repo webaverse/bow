@@ -8,15 +8,22 @@ const localVector = new THREE.Vector3();
 const localVector2 = new THREE.Vector3();
 const localVector3 = new THREE.Vector3();
 const localVector4 = new THREE.Vector3();
+// const localVector5 = new THREE.Vector3();
+// const localVector6 = new THREE.Vector3();
 const localQuaternion = new THREE.Quaternion();
+const localQuaternion2 = new THREE.Quaternion();
 const localMatrix = new THREE.Matrix4();
 
 const zeroVector = new THREE.Vector3(0, 0, 0);
 const upVector = new THREE.Vector3(0, 1, 0);
+const yN90Quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2);
+const y180Quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+const smallUpQuaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), 0.03*Math.PI);
 const gravity = new THREE.Vector3(0, -9.8, 0);
 const emptyArray = [];
 const fnEmptyArray = () => emptyArray;
 const arrowLength = 0.3;
+const bowUseTime = 850;
 
 const _setQuaternionFromVelocity = (quaternion, velocity) => quaternion.setFromRotationMatrix(
   localMatrix.lookAt(
@@ -34,6 +41,8 @@ export default e => {
   const scene = useScene();
 
   let bowApp = null;
+  let pendingArrowApp = null;
+  let shootingArrowApp = null;
   const arrowApps = [];
   e.waitUntil((async () => {
     {
@@ -112,11 +121,8 @@ export default e => {
         arrowApp.add(tip);
         arrowApp.tip = tip;
 
-        arrowApp.velocity = new THREE.Vector3(0, 0, -20)
-          .applyQuaternion(
-            new THREE.Quaternion()
-              .setFromRotationMatrix(bowApp.matrixWorld)
-          );
+        // arrowApp.savedQuaternion = new THREE.Quaternion();
+        arrowApp.velocity = new THREE.Vector3();
         
         arrowApp.updatePhysics = (timestamp, timeDiff) => {
           const timeDiffS = timeDiff / 1000;
@@ -156,15 +162,39 @@ export default e => {
         return arrowApp;
       };
 
-      bowApp.addEventListener('use', e => {
-        const arrowApp = _createArrowApp();
+      bowApp.use = e => {
+        // console.log('got use', e);
+        pendingArrowApp = _createArrowApp();
+        scene.add(pendingArrowApp);
         
-        scene.add(arrowApp);
-        arrowApp.position.copy(bowApp.position);
+        /* pendingArrowApp.position.copy(bowApp.position);
+        pendingArrowApp.quaternion.copy(bowApp.quaternion);
+        pendingArrowApp.updateMatrixWorld(); */
+      };
+      bowApp.unuse = e => {
+        // console.log('got use', e);
+        // const arrowApp = _createArrowApp();
+        
+        /* arrowApp.position.copy(bowApp.position);
         _setQuaternionFromVelocity(arrowApp.quaternion, arrowApp.velocity);
-        arrowApp.updateMatrixWorld();
-        arrowApps.push(arrowApp);
-      });
+        arrowApp.updateMatrixWorld(); */
+
+        const localPlayer = useLocalPlayer();
+        const timestamp = performance.now();
+
+        const timeDiff = timestamp - localPlayer.characterPhysics.lastBowUseStartTime;
+        if (timeDiff >= bowUseTime) {
+          pendingArrowApp.velocity.set(0, 0, -20)
+            .applyQuaternion(
+              pendingArrowApp.quaternion
+            );
+        } else {
+          pendingArrowApp.velocity.setScalar(0);
+        }
+
+        shootingArrowApp = pendingArrowApp;
+        pendingArrowApp = null;
+      };
     }
   })());
   
@@ -194,12 +224,18 @@ export default e => {
   });
   
   useUse(e => {
-    if (e.use && bowApp) {
-      bowApp.use();
+    if (bowApp) {
+      if (e.use) {
+        bowApp.use(e);
+      } else {
+        bowApp.unuse(e);
+      }
     }
   });
 
   useFrame(({timestamp, timeDiff}) => {
+    const localPlayer = useLocalPlayer();
+    
     if (!wearing) {
       if (bowApp) {
         bowApp.position.copy(app.position);
@@ -212,6 +248,43 @@ export default e => {
         app.quaternion.copy(bowApp.quaternion);
         app.updateMatrixWorld();
       }
+    }
+
+    /* for (const arrowApp of [pendingArrowApp])*/ {
+      const arrowApp = pendingArrowApp;
+      if (arrowApp) {
+        const modelBones = localPlayer.avatar.modelBones;
+        const {/*Root, */Left_wrist, Right_wrist} = modelBones;
+        Left_wrist.matrixWorld.decompose(localVector, localQuaternion, localVector2);
+        Right_wrist.matrixWorld.decompose(localVector3, localQuaternion2, localVector4);
+
+        localQuaternion.multiply(yN90Quaternion);
+        localQuaternion2.multiply(yN90Quaternion);
+
+        const timeDiff = timestamp - localPlayer.characterPhysics.lastBowUseStartTime;
+        if (timeDiff < bowUseTime) {
+          localQuaternion2.multiply(y180Quaternion);
+          arrowApp.position.copy(localVector3)
+            .add(localVector4.set(0, 0, -arrowLength).applyQuaternion(localQuaternion2));
+          arrowApp.quaternion.copy(localQuaternion2);
+        } else {
+          localQuaternion.setFromRotationMatrix(
+            localMatrix.lookAt(
+              localVector3,
+              localVector,
+              localVector2.set(0, 1, 0)
+            )
+          ).multiply(smallUpQuaternion);
+          arrowApp.position.copy(localVector)
+            .add(localVector2.set(0, 0.1, 0.1).applyQuaternion(localQuaternion));
+          arrowApp.quaternion.copy(localQuaternion);
+        }
+        arrowApp.updateMatrixWorld();
+      }
+    }
+    if (shootingArrowApp) {
+      arrowApps.push(shootingArrowApp);
+      shootingArrowApp = null;
     }
     for (const arrowApp of arrowApps) {
       arrowApp.updatePhysics(timestamp, timeDiff);
