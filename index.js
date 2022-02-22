@@ -145,17 +145,43 @@ export default e => {
 
           let moveFactor;
           if (collided) {
-            moveFactor = collision.distance;
-            arrowApp.velocity.setScalar(0);
+            {
+              moveFactor = collision.distance;
+              arrowApp.velocity.setScalar(0);
+            }
+            {
+              const collisionId = collision.objectId;
+              const object = getAppByPhysicsId(collisionId);
+              if (object) {
+                const damage = 10;
+                const hitDirection = localVector4.set(0, 0, -1)
+                  .applyQuaternion(arrowApp.quaternion);
+                const hitPosition = localVector5.fromArray(collision.point);
+
+                localEuler.setFromQuaternion(camera.quaternion, 'YXZ');
+                localEuler.x = 0;
+                localEuler.z = 0;
+                const hitQuaternion = localQuaternion.setFromEuler(localEuler);
+
+                const willDie = object.willDieFrom(damage);
+                object.hit(damage, {
+                  collisionId,
+                  hitPosition,
+                  hitQuaternion,
+                  hitDirection,
+                  willDie,
+                });
+              }
+            }
           } else {
             moveFactor = moveDistance;
             arrowApp.velocity.add(
-              localVector4.copy(gravity)
+              localVector6.copy(gravity)
                 .multiplyScalar(timeDiffS)
             );
           }
           arrowApp.position.add(
-            localVector4.copy(normalizedVelocity)
+            localVector6.copy(normalizedVelocity)
               .multiplyScalar(moveFactor)
           );
 
