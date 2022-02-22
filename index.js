@@ -125,7 +125,6 @@ export default e => {
         arrowApp.add(tip);
         arrowApp.tip = tip;
 
-        // arrowApp.savedQuaternion = new THREE.Quaternion();
         arrowApp.velocity = new THREE.Vector3();
         
         arrowApp.updatePhysics = (timestamp, timeDiff) => {
