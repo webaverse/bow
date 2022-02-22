@@ -251,7 +251,7 @@ export default e => {
       }
     }
 
-    /* for (const arrowApp of [pendingArrowApp])*/ {
+    {
       const arrowApp = pendingArrowApp;
       if (arrowApp) {
         const modelBones = localPlayer.avatar.modelBones;
