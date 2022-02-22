@@ -287,7 +287,9 @@ export default e => {
       arrowApps.push(shootingArrowApp);
       shootingArrowApp = null;
     }
-    arrowApps = arrowApps.filter(arrowApp => arrowApp.updatePhysics(timestamp, timeDiff));
+    if (arrowApps.length > 0) {
+      arrowApps = arrowApps.filter(arrowApp => arrowApp.updatePhysics(timestamp, timeDiff));
+    }
   });
   
   useCleanup(() => {
