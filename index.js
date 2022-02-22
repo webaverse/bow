@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import metaversefile from 'metaversefile';
-const {useApp, useFrame, useActivate, useWear, useUse, useLocalPlayer, usePhysics, useScene, getNextInstanceId, getAppByPhysicsId, useWorld, useDefaultModules, useCleanup} = metaversefile;
+const {useApp, useFrame, useActivate, useWear, useUse, useLocalPlayer, usePhysics, useScene, useCamera, getNextInstanceId, getAppByPhysicsId, useWorld, useDefaultModules, useCleanup} = metaversefile;
 
 const baseUrl = import.meta.url.replace(/(\/)[^\/\\]*$/, '$1');
 
@@ -40,6 +40,7 @@ export default e => {
 
   const physics = usePhysics();
   const scene = useScene();
+  const camera = useCamera();
 
   let bowApp = null;
   let pendingArrowApp = null;
