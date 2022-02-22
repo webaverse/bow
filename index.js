@@ -60,7 +60,7 @@ export default e => {
       bowApp.name = 'bow';
       bowApp.getPhysicsObjectsOriginal = bowApp.getPhysicsObjects;
       bowApp.getPhysicsObjects = fnEmptyArray;
-      
+
       const components = [
         {
           "key": "instanceId",
@@ -107,6 +107,10 @@ export default e => {
       }
       await bowApp.addModule(m);
       scene.add(bowApp);
+
+      const stringBone = bowApp.children[0].getObjectByName('root');
+      console.log('bow string bone', stringBone);
+      // window.bowApp = bowApp;
 
       const arrowTemplateMesh = bowApp.getObjectByName('Arrow');
       arrowTemplateMesh.parent.remove(arrowTemplateMesh);
