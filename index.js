@@ -76,14 +76,16 @@ export default e => {
           "key": "wear",
           "value": {
             "boneAttachment": "rightHand",
-            "position": [0, 0, 0],
+            "position": [0, -0.03, 0],
             "quaternion": [0.5, -0.4999999999999999, -0.5, 0.5000000000000001],
             "scale": [1, 1, 1]
           }
         },
         {
           "key": "aim",
-          "value": {}
+          "value": {
+            
+          }
         },
         {
           "key": "use",
