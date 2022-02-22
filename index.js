@@ -43,7 +43,7 @@ export default e => {
   let bowApp = null;
   let pendingArrowApp = null;
   let shootingArrowApp = null;
-  const arrowApps = [];
+  let arrowApps = [];
   e.waitUntil((async () => {
     {
       let u2 = `${baseUrl}bow.glb`;
@@ -128,35 +128,36 @@ export default e => {
           const timeDiffS = timeDiff / 1000;
 
           const moveDistance = arrowApp.velocity.length() * timeDiffS;
-          if (moveDistance > 0) {
-            arrowApp.tip.matrixWorld.decompose(localVector, localQuaternion, localVector2);
-            const collision = physics.raycast(
-              localVector,
-              localQuaternion
-            );
+          arrowApp.tip.matrixWorld.decompose(localVector, localQuaternion, localVector2);
+          const collision = physics.raycast(
+            localVector,
+            localQuaternion
+          );
+          const collided = collision && collision.distance <= moveDistance;
 
-            _setQuaternionFromVelocity(arrowApp.quaternion, arrowApp.velocity);
-            const normalizedVelocity = localVector3.copy(arrowApp.velocity)
-              .normalize();
+          _setQuaternionFromVelocity(arrowApp.quaternion, arrowApp.velocity);
+          const normalizedVelocity = localVector3.copy(arrowApp.velocity)
+            .normalize();
 
-            let moveFactor;
-            if (collision && collision.distance <= moveDistance) {
-              moveFactor = collision.distance;
-              arrowApp.velocity.setScalar(0);
-            } else {
-              moveFactor = moveDistance;
-              arrowApp.velocity.add(
-                localVector4.copy(gravity)
-                  .multiplyScalar(timeDiffS)
-              );
-            }
-            arrowApp.position.add(
-              localVector4.copy(normalizedVelocity)
-                .multiplyScalar(moveFactor)
+          let moveFactor;
+          if (collided) {
+            moveFactor = collision.distance;
+            arrowApp.velocity.setScalar(0);
+          } else {
+            moveFactor = moveDistance;
+            arrowApp.velocity.add(
+              localVector4.copy(gravity)
+                .multiplyScalar(timeDiffS)
             );
           }
+          arrowApp.position.add(
+            localVector4.copy(normalizedVelocity)
+              .multiplyScalar(moveFactor)
+          );
 
           arrowApp.updateMatrixWorld();
+
+          return !collided;
         };
 
         return arrowApp;
@@ -286,9 +287,7 @@ export default e => {
       arrowApps.push(shootingArrowApp);
       shootingArrowApp = null;
     }
-    for (const arrowApp of arrowApps) {
-      arrowApp.updatePhysics(timestamp, timeDiff);
-    }
+    arrowApps = arrowApps.filter(arrowApp => arrowApp.updatePhysics(timestamp, timeDiff));
   });
   
   useCleanup(() => {
