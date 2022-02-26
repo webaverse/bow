@@ -112,8 +112,10 @@ export default e => {
       await bowApp.addModule(m);
       scene.add(bowApp);
 
-      const stringBone = bowApp.children[0].getObjectByName('root');
-      console.log('bow string bone', stringBone);
+      const stringBone = bowApp.getObjectByName('string');
+      stringBone.originalPosition = stringBone.position.clone();
+      bowApp.stringBone = stringBone;
+      // console.log('bow string bone', stringBone);
       // window.bowApp = bowApp;
 
       const arrowTemplateMesh = bowApp.getObjectByName('Arrow');
