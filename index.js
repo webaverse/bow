@@ -43,6 +43,9 @@ export default e => {
   const camera = useCamera();
 
   let bowApp = null;
+  const _setBowApp = app => {
+    bowApp = app;
+  };
   let pendingArrowApp = null;
   let shootingArrowApp = null;
   let arrowApps = [];
@@ -50,7 +53,7 @@ export default e => {
     {
       let u2 = `${baseUrl}bow.glb`;
       const m = await metaversefile.import(u2);
-      bowApp = metaversefile.createApp({
+      const bowApp = metaversefile.createApp({
         name: u2,
       });
       bowApp.position.copy(app.position);
