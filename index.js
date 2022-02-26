@@ -233,6 +233,8 @@ export default e => {
         shootingArrowApp = pendingArrowApp;
         pendingArrowApp = null;
       };
+
+      _setBowApp(bowApp);
     }
   })());
   
