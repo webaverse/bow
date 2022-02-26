@@ -25,6 +25,7 @@ const emptyArray = [];
 const fnEmptyArray = () => emptyArray;
 const arrowLength = 0.3;
 const bowUseTime = 850;
+const bowStringTime = 500;
 
 const _setQuaternionFromVelocity = (quaternion, velocity) => quaternion.setFromRotationMatrix(
   localMatrix.lookAt(
