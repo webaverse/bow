@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import metaversefile from 'metaversefile';
-const {useApp, useFrame, useActivate, useWear, useUse, useLocalPlayer, usePhysics, useScene, useCamera, getNextInstanceId, getAppByPhysicsId, useWorld, useDefaultModules, useCleanup} = metaversefile;
+const {useApp, useFrame, useActivate, useWear, useUse, useLocalPlayer, usePhysics, useScene, useCamera, getNextInstanceId, getAppByPhysicsId, useWorld, useDefaultModules, useCleanup, useSound} = metaversefile;
 
 const baseUrl = import.meta.url.replace(/(\/)[^\/\\]*$/, '$1');
 
@@ -39,6 +39,14 @@ export default e => {
   const app = useApp();
   app.name = 'bow';
 
+  const sounds = useSound();
+  const soundFiles = sounds.getSoundFiles();
+  const drawSoundIndex=soundFiles.combat.map(sound => sound.name).indexOf('combat/bow_draw.wav');
+  const releaseSoundIndex=soundFiles.combat.map(sound => sound.name).indexOf('combat/bow_release1.wav');
+  const hitSoundIndex=soundFiles.combat.map(sound => sound.name).indexOf('combat/arrow-hit1.wav');
+
+
+
   const physics = usePhysics();
   const scene = useScene();
   const camera = useCamera();
@@ -53,6 +61,9 @@ export default e => {
   e.waitUntil((async () => {
     {
       let u2 = `${baseUrl}bow.glb`;
+      if (/^https?:/.test(u2)) {
+        u2 = '/@proxy/' + u2;
+      }
       const m = await metaversefile.import(u2);
       const bowApp = metaversefile.createApp({
         name: u2,
@@ -155,6 +166,7 @@ export default e => {
           let moveFactor;
           if (collided) {
             {
+              sounds.playSound(soundFiles.combat[hitSoundIndex]);
               moveFactor = collision.distance;
               arrowApp.velocity.setScalar(0);
             }
@@ -264,18 +276,41 @@ export default e => {
     }
     wearing = wear;
   });
-  
+
+
+  let oldBowDrawSound=null; 
+  let bowUseSw=false;
+  let bowStartTime=0;
+  let bowSoundPlay=false;
   useUse(e => {
     if (bowApp) {
       if (e.use) {
         bowApp.use(e);
+        bowUseSw=true;
       } else {
         bowApp.unuse(e);
+        if(oldBowDrawSound){
+          oldBowDrawSound.stop();
+        }
+        sounds.playSound(soundFiles.combat[releaseSoundIndex+Math.floor(Math.random()*8)]);
+        bowSoundPlay=false;
+        bowStartTime=0;
+        bowUseSw=false;
       }
     }
   });
 
   useFrame(({timestamp, timeDiff}) => {
+
+    if(bowStartTime===0 && bowUseSw){
+      bowStartTime=timestamp;
+    }
+    if(timestamp-bowStartTime>600 && !bowSoundPlay && bowUseSw){
+      const localSound = sounds.playSound(soundFiles.combat[drawSoundIndex]);
+      oldBowDrawSound= localSound;
+      bowSoundPlay=true;
+    }
+
     const localPlayer = useLocalPlayer();
     
     if (!wearing) {
