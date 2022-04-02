@@ -184,13 +184,13 @@ export default e => {
                 localEuler.z = 0;
                 const hitQuaternion = localQuaternion.setFromEuler(localEuler);
 
-                const willDie = object.willDieFrom(damage);
+                // const willDie = object.willDieFrom(damage);
                 object.hit(damage, {
                   collisionId,
                   hitPosition,
                   hitQuaternion,
                   hitDirection,
-                  willDie,
+                  // willDie,
                 });
               }
             }
