@@ -1,5 +1,6 @@
 {
   "name": "bow",
+  "description": "bow",
   "start_url": "index.js",
   "components": [
     {
