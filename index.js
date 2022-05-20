@@ -263,7 +263,7 @@ export default e => {
   
   let wearing = false;
   useWear(e => {
-    const {wear} = e;
+    const {wear, player} = e;
     if (bowApp) {
       /* bowApp.position.copy(app.position);
       bowApp.scale.copy(app.scale);
@@ -271,6 +271,7 @@ export default e => {
       
       bowApp.dispatchEvent({
         type: 'wearupdate',
+        player,
         wear,
       });
     }
