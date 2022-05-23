@@ -138,8 +138,12 @@ export default e => {
         });
 
         const arrowMesh = arrowTemplateMesh.clone();
+        arrowMesh.material = arrowTemplateMesh.material.clone();
+        arrowMesh.material.format = THREE.RGBAFormat
+        arrowMesh.material.transparent=true;
         arrowMesh.frustumCulled = false;
         arrowApp.add(arrowMesh);
+        
 
         const tip = new THREE.Object3D();
         tip.position.set(0, 0, -arrowLength/2);
@@ -147,7 +151,7 @@ export default e => {
         arrowApp.tip = tip;
 
         arrowApp.velocity = new THREE.Vector3();
-        
+        arrowApp.collisionTime=-1;
         arrowApp.updatePhysics = (timestamp, timeDiff) => {
           const timeDiffS = timeDiff / 1000;
 
@@ -164,51 +168,64 @@ export default e => {
             .normalize();
 
           let moveFactor;
-          if (collided) {
-            {
-              sounds.playSound(soundFiles.combat[hitSoundIndex]);
-              moveFactor = collision.distance;
-              arrowApp.velocity.setScalar(0);
-            }
-            {
-              const collisionId = collision.objectId;
-              const object = getAppByPhysicsId(collisionId);
-              if (object) {
-                const damage = 10;
-                const hitDirection = localVector4.set(0, 0, -1)
-                  .applyQuaternion(arrowApp.quaternion);
-                const hitPosition = localVector5.fromArray(collision.point);
-
-                localEuler.setFromQuaternion(camera.quaternion, 'YXZ');
-                localEuler.x = 0;
-                localEuler.z = 0;
-                const hitQuaternion = localQuaternion.setFromEuler(localEuler);
-
-                // const willDie = object.willDieFrom(damage);
-                object.hit(damage, {
-                  collisionId,
-                  hitPosition,
-                  hitQuaternion,
-                  hitDirection,
-                  // willDie,
-                });
+          if(arrowApp.collisionTime===-1){
+            if (collided) {
+              {
+                sounds.playSound(soundFiles.combat[hitSoundIndex]);
+                moveFactor = collision.distance;
+                arrowApp.velocity.setScalar(0);
+                arrowApp.collisionTime=timestamp;
               }
+              {
+                const collisionId = collision.objectId;
+                const object = getAppByPhysicsId(collisionId);
+                if (object) {
+  
+                  const damage = 10;
+                  const hitDirection = localVector4.set(0, 0, -1)
+                    .applyQuaternion(arrowApp.quaternion);
+                  const hitPosition = localVector5.fromArray(collision.point);
+  
+                  localEuler.setFromQuaternion(camera.quaternion, 'YXZ');
+                  localEuler.x = 0;
+                  localEuler.z = 0;
+                  const hitQuaternion = localQuaternion.setFromEuler(localEuler);
+  
+                  // const willDie = object.willDieFrom(damage);
+                  object.hit(damage, {
+                    collisionId,
+                    hitPosition,
+                    hitQuaternion,
+                    hitDirection,
+                    // willDie,
+                  });
+  
+                }
+              }
+            } else {
+              moveFactor = moveDistance;
+              arrowApp.velocity.add(
+                localVector6.copy(gravity)
+                  .multiplyScalar(timeDiffS)
+              );
+              arrowApp.position.add(
+                localVector6.copy(normalizedVelocity)
+                  .multiplyScalar(moveFactor)
+              );
             }
-          } else {
-            moveFactor = moveDistance;
-            arrowApp.velocity.add(
-              localVector6.copy(gravity)
-                .multiplyScalar(timeDiffS)
-            );
+            arrowApp.updateMatrixWorld();
           }
-          arrowApp.position.add(
-            localVector6.copy(normalizedVelocity)
-              .multiplyScalar(moveFactor)
-          );
-
-          arrowApp.updateMatrixWorld();
-
-          return !collided;
+          
+          if(arrowApp.collisionTime===-1 || arrowMesh.material.opacity>0){
+            if(arrowApp.collisionTime!==-1){
+              arrowMesh.material.opacity-=0.02;
+            }
+            return true;
+          }
+          if(arrowMesh.material.opacity<=0){
+            scene.remove(arrowApp)
+          }
+          return false;
         };
 
         return arrowApp;
