@@ -173,7 +173,7 @@ export default e => {
             {
               const collisionId = collision.objectId;
               const object = getAppByPhysicsId(collisionId);
-              if (object) {
+              if (object && object.getComponent('vincibility') !== 'invincible') {
                 const damage = 10;
                 const hitDirection = localVector4.set(0, 0, -1)
                   .applyQuaternion(arrowApp.quaternion);
