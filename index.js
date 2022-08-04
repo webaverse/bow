@@ -226,26 +226,27 @@ export default e => {
       bowApp.unuse = e => {
         // console.log('got use', e);
         // const arrowApp = _createArrowApp();
-        
+      
         /* arrowApp.position.copy(bowApp.position);
         _setQuaternionFromVelocity(arrowApp.quaternion, arrowApp.velocity);
         arrowApp.updateMatrixWorld(); */
+        if(pendingArrowApp) {
+          const localPlayer = useLocalPlayer();
+          const timestamp = performance.now();
 
-        const localPlayer = useLocalPlayer();
-        const timestamp = performance.now();
+          const timeDiff = timestamp - localPlayer.characterPhysics.lastBowUseStartTime;
+          if (timeDiff >= bowUseTime) {
+            pendingArrowApp.velocity.set(0, 0, -20)
+              .applyQuaternion(
+                pendingArrowApp.quaternion
+              );
+          } else {
+            pendingArrowApp.velocity.setScalar(0);
+          }
 
-        const timeDiff = timestamp - localPlayer.characterPhysics.lastBowUseStartTime;
-        if (timeDiff >= bowUseTime) {
-          pendingArrowApp.velocity.set(0, 0, -20)
-            .applyQuaternion(
-              pendingArrowApp.quaternion
-            );
-        } else {
-          pendingArrowApp.velocity.setScalar(0);
+          shootingArrowApp = pendingArrowApp;
+          pendingArrowApp = null;
         }
-
-        shootingArrowApp = pendingArrowApp;
-        pendingArrowApp = null;
       };
 
       _setBowApp(bowApp);
@@ -269,6 +270,18 @@ export default e => {
       bowApp.scale.copy(app.scale);
       bowApp.updateMatrixWorld(); */
       
+      if(!wear) {
+        if(oldBowDrawSound){
+          oldBowDrawSound.stop();
+          oldBowDrawSound=null;
+        }
+        bowSoundPlay=false;
+        bowUseSw=false;
+        bowStartTime=0;
+        scene.remove(pendingArrowApp);
+        pendingArrowApp = null;
+      }
+
       bowApp.dispatchEvent({
         type: 'wearupdate',
         player,
