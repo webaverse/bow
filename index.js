@@ -58,6 +58,8 @@ export default e => {
   let pendingArrowApp = null;
   let shootingArrowApp = null;
   let arrowApps = [];
+  const hitArrowAppsArray = [];
+
   e.waitUntil((async () => {
     {
       let u2 = `${baseUrl}bow.glb`;
@@ -192,6 +194,21 @@ export default e => {
                   hitDirection,
                   // willDie,
                 });
+                
+                const hasHitApp = hitArrowAppsArray.indexOf(object.instanceId);
+                if (hasHitApp === -1) {
+                  hitArrowAppsArray.push(object.instanceId);
+                  object.arrowApps = [];
+                  object.addEventListener('destroy', (e) => {
+                    const destroyingApp = e.target;
+                    for (let i = 0; i < destroyingApp.arrowApps.length; i++) {
+                      console.log("Removing Arrow App");
+                      scene.remove(destroyingApp.arrowApps[i]);
+                    }
+                  });
+                }else {
+                object.arrowApps.push(arrowApp);
+                }
               }
             }
           } else {
@@ -302,7 +319,6 @@ export default e => {
   });
 
   useFrame(({timestamp, timeDiff}) => {
-
     if(bowStartTime===0 && bowUseSw){
       bowStartTime=timestamp;
     }
