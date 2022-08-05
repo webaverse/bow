@@ -58,7 +58,6 @@ export default e => {
   let pendingArrowApp = null;
   let shootingArrowApp = null;
   let arrowApps = [];
-  const hitArrowAppsArray = [];
 
   e.waitUntil((async () => {
     {
@@ -176,8 +175,24 @@ export default e => {
               const collisionId = collision.objectId;
               const object = getAppByPhysicsId(collisionId);
               if (object) {
+                if (!object.arrowApps) {
+                  object.arrowApps = [];
+                  // listening for destroy event on the hit app
+                  object.addEventListener('destroy', (e) => {
+                    const destroyingApp = e.target;
+                    for (let i = 0; i < destroyingApp.arrowApps.length; i++) {
+                      // remove arrow apps that are stored in the app object
+                      scene.remove(destroyingApp.arrowApps[i]);
+                    }
+                  });
+                }
+
+                // pushing the arrow app into the hit app
+                object.arrowApps.push(arrowApp);
+
                 const damage = 10;
-                const hitDirection = localVector4.set(0, 0, -1)
+                const hitDirection = localVector4
+                  .set(0, 0, -1)
                   .applyQuaternion(arrowApp.quaternion);
                 const hitPosition = localVector5.fromArray(collision.point);
 
@@ -194,28 +209,12 @@ export default e => {
                   hitDirection,
                   // willDie,
                 });
-                
-                const hasHitApp = hitArrowAppsArray.indexOf(object.instanceId);
-                if (hasHitApp === -1) {
-                  hitArrowAppsArray.push(object.instanceId);
-                  object.arrowApps = [];
-                  object.addEventListener('destroy', (e) => {
-                    const destroyingApp = e.target;
-                    for (let i = 0; i < destroyingApp.arrowApps.length; i++) {
-                      console.log("Removing Arrow App");
-                      scene.remove(destroyingApp.arrowApps[i]);
-                    }
-                  });
-                }else {
-                object.arrowApps.push(arrowApp);
-                }
               }
             }
           } else {
             moveFactor = moveDistance;
             arrowApp.velocity.add(
-              localVector6.copy(gravity)
-                .multiplyScalar(timeDiffS)
+              localVector6.copy(gravity).multiplyScalar(timeDiffS)
             );
           }
           arrowApp.position.add(
