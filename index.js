@@ -58,6 +58,7 @@ export default e => {
   let pendingArrowApp = null;
   let shootingArrowApp = null;
   let arrowApps = [];
+
   e.waitUntil((async () => {
     {
       let u2 = `${baseUrl}bow.glb`;
@@ -174,8 +175,24 @@ export default e => {
               const collisionId = collision.objectId;
               const object = getAppByPhysicsId(collisionId);
               if (object) {
+                if (!object.arrowApps) {
+                  object.arrowApps = [];
+                  // listening for destroy event on the hit app
+                  object.addEventListener('destroy', (e) => {
+                    const destroyingApp = e.target;
+                    for (let i = 0; i < destroyingApp.arrowApps.length; i++) {
+                      // remove arrow apps that are stored in the app object
+                      scene.remove(destroyingApp.arrowApps[i]);
+                    }
+                  });
+                }
+
+                // pushing the arrow app into the hit app
+                object.arrowApps.push(arrowApp);
+
                 const damage = 10;
-                const hitDirection = localVector4.set(0, 0, -1)
+                const hitDirection = localVector4
+                  .set(0, 0, -1)
                   .applyQuaternion(arrowApp.quaternion);
                 const hitPosition = localVector5.fromArray(collision.point);
 
@@ -197,8 +214,7 @@ export default e => {
           } else {
             moveFactor = moveDistance;
             arrowApp.velocity.add(
-              localVector6.copy(gravity)
-                .multiplyScalar(timeDiffS)
+              localVector6.copy(gravity).multiplyScalar(timeDiffS)
             );
           }
           arrowApp.position.add(
@@ -302,7 +318,6 @@ export default e => {
   });
 
   useFrame(({timestamp, timeDiff}) => {
-
     if(bowStartTime===0 && bowUseSw){
       bowStartTime=timestamp;
     }
