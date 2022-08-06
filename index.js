@@ -60,11 +60,11 @@ export default e => {
   let arrowApps = [];
 
   const bowAppArrowApps = [];
-  const damagedAppsMap = new Map();
+  const arrowsAppMap = new Map();
 
   const cleanupArrowApps = (e) => {
     const destroyingApp = e.target;
-    const destroyingArrowAppsArray = damagedAppsMap.get(destroyingApp);
+    const destroyingArrowAppsArray = arrowsAppMap.get(destroyingApp);
     for (const destroyingArrowApp of destroyingArrowAppsArray) {
       // remove arrow apps that are stored in the app object
       scene.remove(destroyingArrowApp);
@@ -189,15 +189,15 @@ export default e => {
               const collisionId = collision.objectId;
               const targetApp = getAppByPhysicsId(collisionId);
               if (targetApp) {
-                const hasTargetApp = damagedAppsMap.has(targetApp);
+                const hasTargetApp = arrowsAppMap.has(targetApp);
                 if (!hasTargetApp) {
                   const newArrowAppsArray = [];
-                  damagedAppsMap.set(targetApp, newArrowAppsArray);
+                  arrowsAppMap.set(targetApp, newArrowAppsArray);
                   // listening for destroy event on the hit app
                   targetApp.addEventListener('destroy', cleanupArrowApps);
                 }
 
-                const arrowAppsArray = damagedAppsMap.get(targetApp);
+                const arrowAppsArray = arrowsAppMap.get(targetApp);
 
                 // pushing the arrow app into the damaged app
                 arrowAppsArray.push(arrowApp);
@@ -410,14 +410,15 @@ export default e => {
   });
   
   useCleanup(() => {
-    for(const [targetApp, arrowAppsArray] of damagedAppsMap.entries()) {
+    for(const [targetApp, arrowAppsArray] of arrowsAppMap.entries()) {
       targetApp.removeEventListener('destroy', cleanupArrowApps);
 
       for (const arrowApp of arrowAppsArray) {
         scene.remove(arrowApp);
+        arrowApp.destroy();
       }
 
-      damagedAppsMap.delete(targetApp);
+      arrowsAppMap.delete(targetApp);
     }
     scene.remove(bowApp);
   });
