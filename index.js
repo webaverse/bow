@@ -60,13 +60,16 @@ export default e => {
   let arrowApps = [];
 
   const bowAppArrowApps = [];
-  const targetApps = [];
+  const damagedAppsMap = new Map();
 
   const cleanupArrowApps = (e) => {
     const destroyingApp = e.target;
-    for (let i = 0; i < destroyingApp.arrowApps.length; i++) {
+    const destroyingArrowAppsArray = damagedAppsMap.get(destroyingApp);
+    for (const destroyingArrowApp of destroyingArrowAppsArray) {
       // remove arrow apps that are stored in the app object
-      scene.remove(destroyingApp.arrowApps[i]);
+      scene.remove(destroyingArrowApp);
+      destroyingArrowApp.destroy();
+      
     }
   };
 
@@ -186,17 +189,18 @@ export default e => {
               const collisionId = collision.objectId;
               const targetApp = getAppByPhysicsId(collisionId);
               if (targetApp) {
-                if (!targetApp.arrowApps) {
-                  targetApp.arrowApps = [];
-
+                const hasTargetApp = damagedAppsMap.has(targetApp);
+                if (!hasTargetApp) {
+                  const newArrowAppsArray = [];
+                  damagedAppsMap.set(targetApp, newArrowAppsArray);
                   // listening for destroy event on the hit app
                   targetApp.addEventListener('destroy', cleanupArrowApps);
-
-                  targetApps.push(targetApp);
                 }
 
+                const arrowAppsArray = damagedAppsMap.get(targetApp);
+
                 // pushing the arrow app into the damaged app
-                targetApp.arrowApps.push(arrowApp);
+                arrowAppsArray.push(arrowApp);
                 bowAppArrowApps.push(arrowApp);
 
                 const damage = 10;
@@ -406,11 +410,14 @@ export default e => {
   });
   
   useCleanup(() => {
-    for(const targetApp of targetApps) {
+    for(const [targetApp, arrowAppsArray] of damagedAppsMap.entries()) {
       targetApp.removeEventListener('destroy', cleanupArrowApps);
-    }
-    for(const arrowApp of bowAppArrowApps) {
-      scene.remove(arrowApp);
+
+      for (const arrowApp of arrowAppsArray) {
+        scene.remove(arrowApp);
+      }
+
+      damagedAppsMap.delete(targetApp);
     }
     scene.remove(bowApp);
   });
