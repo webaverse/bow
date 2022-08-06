@@ -59,6 +59,17 @@ export default e => {
   let shootingArrowApp = null;
   let arrowApps = [];
 
+  const bowAppArrowApps = [];
+  const targetApps = [];
+
+  const cleanupArrowApps = (e) => {
+    const destroyingApp = e.target;
+    for (let i = 0; i < destroyingApp.arrowApps.length; i++) {
+      // remove arrow apps that are stored in the app object
+      scene.remove(destroyingApp.arrowApps[i]);
+    }
+  };
+
   e.waitUntil((async () => {
     {
       let u2 = `${baseUrl}bow.glb`;
@@ -173,22 +184,20 @@ export default e => {
             }
             {
               const collisionId = collision.objectId;
-              const object = getAppByPhysicsId(collisionId);
-              if (object) {
-                if (!object.arrowApps) {
-                  object.arrowApps = [];
+              const targetApp = getAppByPhysicsId(collisionId);
+              if (targetApp) {
+                if (!targetApp.arrowApps) {
+                  targetApp.arrowApps = [];
+
                   // listening for destroy event on the hit app
-                  object.addEventListener('destroy', (e) => {
-                    const destroyingApp = e.target;
-                    for (let i = 0; i < destroyingApp.arrowApps.length; i++) {
-                      // remove arrow apps that are stored in the app object
-                      scene.remove(destroyingApp.arrowApps[i]);
-                    }
-                  });
+                  targetApp.addEventListener('destroy', cleanupArrowApps);
+
+                  targetApps.push(targetApp);
                 }
 
-                // pushing the arrow app into the hit app
-                object.arrowApps.push(arrowApp);
+                // pushing the arrow app into the damaged app
+                targetApp.arrowApps.push(arrowApp);
+                bowAppArrowApps.push(arrowApp);
 
                 const damage = 10;
                 const hitDirection = localVector4
@@ -202,7 +211,7 @@ export default e => {
                 const hitQuaternion = localQuaternion.setFromEuler(localEuler);
 
                 // const willDie = object.willDieFrom(damage);
-                object.hit(damage, {
+                targetApp.hit(damage, {
                   collisionId,
                   hitPosition,
                   hitQuaternion,
@@ -397,6 +406,12 @@ export default e => {
   });
   
   useCleanup(() => {
+    for(const targetApp of targetApps) {
+      targetApp.removeEventListener('destroy', cleanupArrowApps);
+    }
+    for(const arrowApp of bowAppArrowApps) {
+      scene.remove(arrowApp);
+    }
     scene.remove(bowApp);
   });
 
