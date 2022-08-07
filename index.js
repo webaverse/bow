@@ -59,12 +59,11 @@ export default e => {
   let shootingArrowApp = null;
   let arrowApps = [];
 
-  const bowAppArrowApps = [];
-  const arrowsAppMap = new Map();
+  const arrowsAppsMap = new Map();
 
   const cleanupArrowApps = (e) => {
     const destroyingApp = e.target;
-    const destroyingArrowAppsArray = arrowsAppMap.get(destroyingApp);
+    const destroyingArrowAppsArray = arrowsAppsMap.get(destroyingApp);
     for (const destroyingArrowApp of destroyingArrowAppsArray) {
       // remove arrow apps that are stored in the app object
       scene.remove(destroyingArrowApp);
@@ -189,19 +188,18 @@ export default e => {
               const collisionId = collision.objectId;
               const targetApp = getAppByPhysicsId(collisionId);
               if (targetApp) {
-                const hasTargetApp = arrowsAppMap.has(targetApp);
+                const hasTargetApp = arrowsAppsMap.has(targetApp);
                 if (!hasTargetApp) {
                   const newArrowAppsArray = [];
-                  arrowsAppMap.set(targetApp, newArrowAppsArray);
+                  arrowsAppsMap.set(targetApp, newArrowAppsArray);
                   // listening for destroy event on the hit app
                   targetApp.addEventListener('destroy', cleanupArrowApps);
                 }
 
-                const arrowAppsArray = arrowsAppMap.get(targetApp);
+                const arrowAppsArray = arrowsAppsMap.get(targetApp);
 
                 // pushing the arrow app into the damaged app
                 arrowAppsArray.push(arrowApp);
-                bowAppArrowApps.push(arrowApp);
 
                 const damage = 10;
                 const hitDirection = localVector4
@@ -410,7 +408,7 @@ export default e => {
   });
   
   useCleanup(() => {
-    for(const [targetApp, arrowAppsArray] of arrowsAppMap.entries()) {
+    for(const [targetApp, arrowAppsArray] of arrowsAppsMap.entries()) {
       targetApp.removeEventListener('destroy', cleanupArrowApps);
 
       for (const arrowApp of arrowAppsArray) {
@@ -418,7 +416,7 @@ export default e => {
         arrowApp.destroy();
       }
 
-      arrowsAppMap.delete(targetApp);
+      arrowsAppsMap.delete(targetApp);
     }
     scene.remove(bowApp);
   });
