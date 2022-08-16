@@ -136,6 +136,7 @@ export default e => {
       }
       await bowApp.addModule(m);
       scene.add(bowApp);
+      app.children.push(bowApp)
 
       const stringBone = bowApp.getObjectByName('string');
       stringBone.originalPosition = stringBone.position.clone();
