@@ -37,6 +37,7 @@ const _setQuaternionFromVelocity = (quaternion, velocity) => quaternion.setFromR
 
 export default e => {
   const app = useApp();
+  app.subApps = [];
   app.name = 'bow';
 
   const sounds = useSound();
@@ -136,6 +137,7 @@ export default e => {
       }
       await bowApp.addModule(m);
       scene.add(bowApp);
+      app.subApps.push(bowApp);
 
       const stringBone = bowApp.getObjectByName('string');
       stringBone.originalPosition = stringBone.position.clone();
@@ -245,6 +247,7 @@ export default e => {
         // console.log('got use', e);
         pendingArrowApp = _createArrowApp();
         scene.add(pendingArrowApp);
+        app.subApps.push(pendingArrowApp);
         
         /* pendingArrowApp.position.copy(bowApp.position);
         pendingArrowApp.quaternion.copy(bowApp.quaternion);
