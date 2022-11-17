@@ -166,12 +166,14 @@ export default e => {
           const timeDiffS = timeDiff / 1000;
 
           const moveDistance = arrowApp.velocity.length() * timeDiffS;
+          // console.log(moveDistance) // same
           arrowApp.tip.matrixWorld.decompose(localVector, localQuaternion, localVector2);
           const collision = physics.raycast(
             localVector,
             localQuaternion
           );
           const collided = collision && collision.distance <= moveDistance;
+          // console.log({localVector, localQuaternion, collided, collision, moveDistance})
 
           _setQuaternionFromVelocity(arrowApp.quaternion, arrowApp.velocity);
           const normalizedVelocity = localVector3.copy(arrowApp.velocity)
@@ -232,6 +234,7 @@ export default e => {
             localVector6.copy(normalizedVelocity)
               .multiplyScalar(moveFactor)
           );
+          // console.log('a', arrowApp.position.x.toFixed(2), arrowApp.position.x.toFixed(2), arrowApp.position.x.toFixed(2))
 
           arrowApp.updateMatrixWorld();
 
@@ -385,6 +388,7 @@ export default e => {
             .add(localVector2.set(0, 0.1, 0.1).applyQuaternion(localQuaternion));
           arrowApp.quaternion.copy(localQuaternion);
         }
+        // console.log('b', arrowApp.position.x.toFixed(2), arrowApp.position.x.toFixed(2), arrowApp.position.x.toFixed(2))
         arrowApp.updateMatrixWorld();
       }
 
